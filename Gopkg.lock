@@ -10,6 +10,18 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:84ff1cb4291e555dd833ff78d0b5fccb5761b8dbf7ca2ee4d6e84e9aa862a786"
+  name = "github.com/nalej/golang-template"
+  packages = [
+    "cmd/example-app/commands",
+    "cmd/other-app/commands",
+    "version",
+  ]
+  pruneopts = ""
+  revision = "11580fd0c75e9e14992bb58cbc73da69f5de39d2"
+
+[[projects]]
   digest = "1:aed55b9be75ddc9942b4a19c2ca3c43d7c9d3f3c6b1ff372b0728c4df4037e6a"
   name = "github.com/rs/zerolog"
   packages = [
@@ -42,6 +54,9 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/nalej/golang-template/cmd/example-app/commands",
+    "github.com/nalej/golang-template/cmd/other-app/commands",
+    "github.com/nalej/golang-template/version",
     "github.com/rs/zerolog",
     "github.com/rs/zerolog/log",
     "github.com/spf13/cobra",
