@@ -8,7 +8,11 @@
     "image_list": [
         "log-download-manager"
     ],
-    "tools": [
+    "component_list": [
         "log-download-manager"
+    ],
+    "tools": [
+        "k8s",
+        "docker"
     ]
 }
