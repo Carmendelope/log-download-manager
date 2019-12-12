@@ -12,16 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-
-// This is an example of an executable command.
 
 package main
 
 import (
-	"github.com/nalej/golang-template/cmd/example-app/commands"
-	"github.com/nalej/golang-template/version"
+	"github.com/nalej/log-download-manager/cmd/log-download-manager/commands"
+	"github.com/nalej/log-download-manager/version"
 )
 
 var MainVersion string

@@ -12,28 +12,34 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-
-// This is an example of an executable command.
 
 package commands
 
 import (
+	"github.com/nalej/log-download-manager/internal/pkg/server"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
-var helloCmd = &cobra.Command{
-	Use:   "hello",
-	Short: "Print a hello message",
-	Long:  `A long description about what is a hello message`,
+var config = server.Config{}
+
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Launch the server API",
+	Long:  `Launch the server API`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SetupLogging()
-		log.Info().Msg("Hello!")
+		log.Info().Msg("Launching API!")
+		config.Debug = debugLevel
+		server := server.NewService(config)
+		server.Run()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(helloCmd)
+	runCmd.Flags().IntVar(&config.Port, "port", 8940, "Port to launch the log-download-manager gRPC")
+	runCmd.PersistentFlags().StringVar(&config.ApplicationsManagerAddress, "applicationsManagerAddress", "localhost:8910",
+		"Applications Manager address (host:port)")
+	rootCmd.AddCommand(runCmd)
 }

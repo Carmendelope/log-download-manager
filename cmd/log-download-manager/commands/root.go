@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package commands
@@ -30,28 +29,15 @@ import (
 var debugLevel bool
 var consoleLogging bool
 
-var msg = `          ----------
-         |  --------  |
-         | |########| |       __________
-         | |########| |      /__________\
- --------|  --------  |------|    --=-- |-------------
-|         ----,-,-----'      |  ======  |             |
-|       ______|_|_______     |__________|             |
-|      /  %%%%%%%%%%%%  \                             |
-|     /  %%%%%%%%%%%%%%  \                            |
-|     ^^^^^^^^^^^^^^^^^^^^                            |
-+-----------------------------------------------------+
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^`
-
 var rootCmd = &cobra.Command{
-	Use:     "example",
-	Short:   "Example of a cobra command",
-	Long:    `A long explanation about what is a cobra command`,
+	Use:     "log-download-manger",
+	Short:   "Log-download-manger component",
+	Long:    "Log download manger component",
 	Version: "unknown-version",
+
 	Run: func(cmd *cobra.Command, args []string) {
 		SetupLogging()
-		log.Info().Msg("You're running other example application.")
-		fmt.Println(msg)
+		cmd.Help()
 	},
 }
 

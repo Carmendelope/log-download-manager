@@ -5,3 +5,15 @@
 [[constraint]]
     name="github.com/spf13/cobra"
     version="v0.0.3"
+
+[[constraint]]
+    name="github.com/nalej/grpc-common-go"
+    version="=v0.0.34"
+
+[[constraint]]
+  name = "github.com/nalej/grpc-application-manager-go"
+  version="=v0.0.49"
+
+[[constraint]]
+  name = "github.com/nalej/grpc-log-download-manager-go"
+  version = "=v0.0.1"
