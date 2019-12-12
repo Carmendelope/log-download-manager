@@ -1,0 +1,40 @@
+###
+# Log Download manager deployment
+###
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    cluster: management
+    component: log-download-manager
+  name: log-download-manager
+  namespace: __NPH_NAMESPACE
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      cluster: management
+      component: log-download-manager
+  template:
+    metadata:
+      labels:
+        cluster: management
+        component: log-download-manager
+    spec:
+      containers:
+      - name: log-download-manager
+        image: __NPH_REGISTRY_NAMESPACE/log-download-manager:__NPH_VERSION
+        imagePullPolicy: Always
+        securityContext:
+          runAsUser: 2000
+        args:
+        - "run"
+        - "--applicationsManagerAddress=application-manager.__NPH_NAMESPACE:8910"
+        volumeMounts:
+        - mountPath: /download
+          name: download-volume
+      volumes:
+      - name: download-volume
+        emptyDir: {}
