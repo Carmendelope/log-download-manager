@@ -1,0 +1,59 @@
+# Requires Makefile.common and a Makefile that exposes image target
+
+DOCKERCMD=docker
+DOCKERFILE=Dockerfile
+
+
+# Docker
+define docker-build-recipe
+@for img in $(1); do \
+	if [ -f components/$$img/$(DOCKERFILE) ]; then \
+		if [ -d components/$$img/dockerenv ]; then \
+			cp -rv components/$$img/dockerenv $(CONTEXTPATH)/. ; \
+		fi ; \
+		{ $(DOCKERCMD) build --no-cache -t $(DOCKER_REPOSITORY)/$$img:$(DOCKER_VERSION) -f components/$$img/$(DOCKERFILE) $(CONTEXTPATH) || exit 1; } && \
+		echo " - Built $$img Docker image using components/$$img/$(DOCKERFILE) and $(CONTEXTPATH) contents" ; \
+	else  \
+		echo " - $$img has no $(DOCKERFILE) file" ; \
+	fi ; \
+done
+endef
+
+define docker-push-recipe
+@for img in $(1); do \
+	if [ -f components/$$img/$(DOCKERFILE) ]; then \
+		{ $(DOCKERCMD) push $(DOCKER_REPOSITORY)/$$img:$(DOCKER_VERSION) || exit 1; } && \
+		echo " - Pushed $$img Docker image to DockerHub" ; \
+		if [ "$(LATEST)" == "true" ]; then \
+			{ $(DOCKERCMD) tag $(DOCKER_REPOSITORY)/$$img:$(DOCKER_VERSION) $(DOCKER_REPOSITORY)/$$img:latest || exit 1; } && \
+			{ $(DOCKERCMD) push $(DOCKER_REPOSITORY)/$$img:latest || exit 1; } ; \
+		fi ; \
+	else  \
+		echo " - $$img has no $(DOCKERFILE) file" ; \
+	fi ; \
+done
+endef
+
+.PHONY: docker-build docker-push image publish
+
+docker-build:
+	@echo ">>> Building Docker images"
+	$(call docker-build-recipe,$(IMGS))
+	@echo ">>> Finished building Docker images"
+
+docker-push:
+	@echo ">>> Pushing Docker images to DockerHub"
+	$(call docker-push-recipe,$(IMGS))
+	@echo ">>> Finished pushing Docker images"
+
+publish: image docker-push
+
+
+# DEPRECATED TARGETS
+.PHONY: create-image publish-image
+create-image:
+	@echo "'make create-image' is DEPRECATED and will be removed soon. Use 'make docker-build' instead"
+	@$(MAKE) docker-build
+publish-image:
+	@echo "'make publish-image' is DEPRECATED and will be removed soon. Use 'make docker-push' instead"
+	@$(MAKE) docker-push
