@@ -17,19 +17,33 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/nalej/grpc-application-manager-go"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	"os"
 	"time"
 )
 
+const testDir = "./testDir/"
 var _ = ginkgo.Describe("Zip Files", func() {
 
 
+	ginkgo.BeforeEach(func() {
+		// create tmp directory
+		err := os.MkdirAll(testDir, os.ModePerm)
+		gomega.Expect(err).To(gomega.Succeed())
+	})
+	ginkgo.AfterEach(func() {
+		// create tmp directory
+		err := os.RemoveAll(testDir)
+		gomega.Expect(err).To(gomega.Succeed())
+	})
 	ginkgo.Context("Adding new operation", func() {
+
 		ginkgo.It("should be create a file", func() {
 
-			path := "/tmp/source/testResponse.file"
+			path := fmt.Sprintf("%stestResponse.file",testDir)
 			err := InitializeFile(path, false)
 			gomega.Expect(err).To(gomega.Succeed())
 			responses := []*grpc_application_manager_go.LogEntryResponse {
@@ -42,7 +56,7 @@ var _ = ginkgo.Describe("Zip Files", func() {
 		})
 		ginkgo.It("should be create zip file", func() {
 
-			path := "/tmp/source/testResponse.file"
+			path := fmt.Sprintf("%stestResponse.file",testDir)
 			err := InitializeFile(path, false)
 			gomega.Expect(err).To(gomega.Succeed())
 
@@ -55,7 +69,7 @@ var _ = ginkgo.Describe("Zip Files", func() {
 			err = AppendResponses(responses, path)
 			gomega.Expect(err).To(gomega.Succeed())
 
-			err = ZipFiles("/tmp/source/test.zip", []string{path})
+			err = ZipFiles(fmt.Sprintf("%stest.zip",testDir), []string{path})
 			gomega.Expect(err).To(gomega.Succeed())
 		})
 	})
