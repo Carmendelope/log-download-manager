@@ -17,24 +17,122 @@
 package log_manager
 
 import (
+	"fmt"
+	"github.com/google/uuid"
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-application-manager-go"
+	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-log-download-manager-go"
+	"github.com/nalej/log-download-manager/internal/pkg/entities"
+	"github.com/nalej/log-download-manager/internal/pkg/utils"
+	"github.com/rs/zerolog/log"
 )
+
+const filesDirectory = "/download/"
 
 // Manager structure with the required clients for roles operations.
 type Manager struct {
 	appManagerClient grpc_application_manager_go.UnifiedLoggingClient
+	opeCache *utils.DownloadCache
 }
 
 // NewManager creates a Manager using a set of clients.
 func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClient) Manager {
-	return Manager{appManagerClient: appManagerClient}
+	return Manager{
+		appManagerClient: appManagerClient,
+		opeCache: utils.NewDownloadCache(),
+	}
+}
+
+func (m *Manager) getFilePath(requestId string) string {
+	return fmt.Sprintf("%s%s.file", filesDirectory, requestId)
+}
+func (m *Manager) getZipFilePath(requestId string) string {
+	return fmt.Sprintf("%s%s.zip", filesDirectory, requestId)
+}
+
+// download generates the zip file with the log entries
+func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequest, requestId string) {
+	log.Debug().Str("requestId", requestId).Msg("downloading logs...")
+
+	// 1.- update the status of the operation
+	updateErr := m.opeCache.Update(requestId, utils.Generating)
+	if updateErr != nil {
+		log.Error().Err(updateErr).Msg("error updating the operation state")
+	}
+
+	// 2.- create the search request
+	searchRequest := entities.NewSearchRequest(request)
+
+	for {
+		// check it the connection already exists
+		ctx, cancel := utils.GetContext()
+		// 3.- Search
+		response, err := m.appManagerClient.Search(ctx, searchRequest)
+		if err != nil {
+			m.opeCache.Update(requestId, utils.Error)
+			cancel()
+			break
+		} else {
+			cancel()
+			log.Debug().Int("responses", len(response.Entries)).Msg("entries retrieved")
+			if len(response.Entries) > 0 {
+				// 4.- Copy the log entries in a file ordered
+				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), m.getFilePath(requestId))
+				if err != nil {
+					updateErr := m.opeCache.Update(requestId, utils.Error)
+					if updateErr != nil {
+						log.Error().Err(updateErr).Msg("error updating the operation state")
+					}
+					break
+				}
+			}else{
+				// 5.- If there is no more entries -> create zip file
+				zipErr := utils.ZipFiles(m.getZipFilePath(requestId), []string{m.getFilePath(requestId)})
+				status := utils.Ready
+				if zipErr != nil {
+					status = utils.Error
+				}else{
+					utils.RemoveFile(m.getFilePath(requestId))
+				}
+				updateErr := m.opeCache.Update(requestId, status)
+				if updateErr != nil {
+					log.Error().Err(updateErr).Msg("error updating the operation state")
+				}
+				break
+			}
+			if request.Order.Order == grpc_common_go.Order_ASC {
+				searchRequest.From = response.To + 1000000
+			}else{
+				searchRequest.To = response.From - 1000000
+			}
+		}
+
+	}
 }
 
 // DownloadLog asks for a logs download operation. These logs are going to be stored in a zip file
 func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogRequest) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
-	return nil, nil
+
+	log.Debug().Interface("request", request).Msg("DownloadLog request")
+	requestId := uuid.New().String()
+	op, err := m.opeCache.Add(requestId, request.From, request.To)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the file
+	utils.InitializeFile(m.getFilePath(requestId), request.IncludeMetadata)
+
+	go m.download(request, requestId)
+
+	return &grpc_log_download_manager_go.DownloadLogResponse{
+		OrganizationId: request.OrganizationId,
+		RequestId: op.RequestId,
+		From: op.From,
+		To: op.To,
+		State: utils.DownloadLogStateToGRPC[op.State],
+	}, nil
 }
 
 // Check asks for a download operation state
