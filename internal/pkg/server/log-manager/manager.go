@@ -17,18 +17,16 @@
 package log_manager
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-application-manager-go"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-log-download-manager-go"
+	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/nalej/log-download-manager/internal/pkg/entities"
 	"github.com/nalej/log-download-manager/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
 )
-
-const filesDirectory = "/download/"
 
 // Manager structure with the required clients for roles operations.
 type Manager struct {
@@ -44,19 +42,12 @@ func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClien
 	}
 }
 
-func (m *Manager) getFilePath(requestId string) string {
-	return fmt.Sprintf("%s%s.file", filesDirectory, requestId)
-}
-func (m *Manager) getZipFilePath(requestId string) string {
-	return fmt.Sprintf("%s%s.zip", filesDirectory, requestId)
-}
-
 // download generates the zip file with the log entries
 func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequest, requestId string) {
 	log.Debug().Str("requestId", requestId).Msg("downloading logs...")
 
 	// 1.- update the status of the operation
-	updateErr := m.opeCache.Update(requestId, utils.Generating)
+	updateErr := m.opeCache.Update(requestId, utils.Generating, "")
 	if updateErr != nil {
 		log.Error().Err(updateErr).Msg("error updating the operation state")
 	}
@@ -70,7 +61,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 		// 3.- Search
 		response, err := m.appManagerClient.Search(ctx, searchRequest)
 		if err != nil {
-			m.opeCache.Update(requestId, utils.Error)
+			m.opeCache.Update(requestId, utils.Error, err.Error())
 			cancel()
 			break
 		} else {
@@ -78,9 +69,9 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 			log.Debug().Int("responses", len(response.Entries)).Msg("entries retrieved")
 			if len(response.Entries) > 0 {
 				// 4.- Copy the log entries in a file ordered
-				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), m.getFilePath(requestId))
+				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), utils.GetFilePath(requestId))
 				if err != nil {
-					updateErr := m.opeCache.Update(requestId, utils.Error)
+					updateErr := m.opeCache.Update(requestId, utils.Error, err.Error())
 					if updateErr != nil {
 						log.Error().Err(updateErr).Msg("error updating the operation state")
 					}
@@ -88,16 +79,19 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 				}
 			}else{
 				// 5.- If there is no more entries -> create zip file
-				zipErr := utils.ZipFiles(m.getZipFilePath(requestId), []string{m.getFilePath(requestId)})
-				status := utils.Ready
+				zipErr := utils.ZipFiles(utils.GetZipFilePath(requestId), []string{utils.GetFilePath(requestId)})
+
 				if zipErr != nil {
-					status = utils.Error
+					updateErr := m.opeCache.Update(requestId, utils.Error, zipErr.Error())
+					if updateErr != nil {
+						log.Error().Err(updateErr).Msg("error updating the operation state")
+					}
 				}else{
-					utils.RemoveFile(m.getFilePath(requestId))
-				}
-				updateErr := m.opeCache.Update(requestId, status)
-				if updateErr != nil {
-					log.Error().Err(updateErr).Msg("error updating the operation state")
+					updateErr := m.opeCache.Update(requestId, utils.Ready, "file generated")
+					if updateErr != nil {
+						log.Error().Err(updateErr).Msg("error updating the operation state")
+					}
+					utils.RemoveFile(utils.GetFilePath(requestId))
 				}
 				break
 			}
@@ -122,7 +116,7 @@ func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogR
 	}
 
 	// Create the file
-	utils.InitializeFile(m.getFilePath(requestId), request.IncludeMetadata)
+	utils.InitializeFile(utils.GetFilePath(requestId), request.IncludeMetadata)
 
 	go m.download(request, requestId)
 
@@ -137,5 +131,10 @@ func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogR
 
 // Check asks for a download operation state
 func (m *Manager) Check(request *grpc_log_download_manager_go.DownloadRequestId) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
-	return nil, nil
+	operation, err  := m.opeCache.Get(request.RequestId)
+	if err != nil {
+		return nil, conversions.ToDerror(err)
+	}
+
+	return entities.NewDownloadLogResponse(request, operation), nil
 }

@@ -79,7 +79,7 @@ var _ = ginkgo.Describe("Utils", func() {
 			_, err := downloadCache.Add(requestID, 0, 0)
 			gomega.Expect(err).To(gomega.Succeed())
 
-			err = downloadCache.Update(requestID, Generating)
+			err = downloadCache.Update(requestID, Generating, "")
 			gomega.Expect(err).To(gomega.Succeed())
 
 			ope, err := downloadCache.Get(requestID)
@@ -91,7 +91,7 @@ var _ = ginkgo.Describe("Utils", func() {
 		})
 		ginkgo.It("should not be able to update one operation if it does not exists", func() {
 			requestID := uuid.New().String()
-			err := downloadCache.Update(requestID, Generating)
+			err := downloadCache.Update(requestID, Generating, "")
 			gomega.Expect(err).NotTo(gomega.Succeed())
 
 

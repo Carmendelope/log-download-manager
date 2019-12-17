@@ -137,3 +137,10 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	_, err = io.Copy(writer, fileToZip)
 	return err
 }
+
+func GetFilePath(requestId string) string {
+	return fmt.Sprintf("%s%s.file", filesDirectory, requestId)
+}
+func GetZipFilePath(requestId string) string {
+	return fmt.Sprintf("%s%s.zip", filesDirectory, requestId)
+}
