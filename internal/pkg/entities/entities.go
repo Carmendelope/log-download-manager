@@ -20,6 +20,7 @@ import (
 	"github.com/nalej/grpc-application-manager-go"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-log-download-manager-go"
+	"github.com/nalej/log-download-manager/internal/pkg/utils"
 	"sort"
 	"time"
 )
@@ -49,6 +50,20 @@ func NewSearchRequest(request *grpc_log_download_manager_go.DownloadLogRequest) 
 	}
 }
 
+func NewDownloadLogResponse(request *grpc_log_download_manager_go.DownloadRequestId, opeInfo *utils.DownloadOperation) *grpc_log_download_manager_go.DownloadLogResponse {
+	return &grpc_log_download_manager_go.DownloadLogResponse{
+		OrganizationId: request.OrganizationId,
+		RequestId:      request.RequestId,
+		From:           opeInfo.From,
+		To:             opeInfo.To,
+		State:          utils.DownloadLogStateToGRPC[opeInfo.State],
+		Expiration:     opeInfo.Expiration,
+		Info:           opeInfo.Info,
+		Url:            opeInfo.Url,
+	}
+
+}
+
 func Sort(elements []*grpc_application_manager_go.LogEntryResponse, order grpc_common_go.Order) []*grpc_application_manager_go.LogEntryResponse {
 	if len(elements) == 0 {
 		return elements
@@ -59,7 +74,7 @@ func Sort(elements []*grpc_application_manager_go.LogEntryResponse, order grpc_c
 			return elements[i].Timestamp < elements[j].Timestamp
 
 		})
-	}else{
+	} else {
 		sort.SliceStable(elements, func(i, j int) bool {
 
 			return elements[i].Timestamp > elements[j].Timestamp

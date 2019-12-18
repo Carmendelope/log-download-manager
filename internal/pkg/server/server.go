@@ -77,7 +77,7 @@ func (s *Service) LaunchGRPC() error {
 	}
 
 	// Create handlers
-	appManager := log_manager.NewManager(clients.AppManagerClient, s.OpeCache)
+	appManager := log_manager.NewManager(clients.AppManagerClient, s.OpeCache, s.Configuration.DownloadPath)
 	appHandler := log_manager.NewHandler(appManager)
 
 	grpcServer := grpc.NewServer()

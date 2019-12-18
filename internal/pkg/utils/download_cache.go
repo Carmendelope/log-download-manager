@@ -17,6 +17,7 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-log-download-manager-go"
 	"github.com/rs/zerolog/log"
@@ -25,6 +26,12 @@ import (
 )
 
 type DownloadLogState int
+
+const (
+	ExpirationTime = 10 * time.Minute
+	url            = "/logs/download/"
+	filesDirectory = "/download/"
+)
 
 const (
 	Queue DownloadLogState = iota + 1
@@ -55,6 +62,8 @@ type DownloadOperation struct {
 	From       int64
 	To         int64
 	Expiration int64
+	Info       string
+	Url        string
 }
 
 type DownloadCache struct {
@@ -99,20 +108,35 @@ func (d *DownloadCache) Get(requestId string) (*DownloadOperation, derrors.Error
 	if !exists {
 		return nil, derrors.NewNotFoundError("operation").WithParams(requestId)
 	}
+
+	// check if it is expired and if it is -> update it! (error, expired)
+	if operation.State == Ready {
+		if operation.Expiration < time.Now().UnixNano() {
+			operation.State = Error
+			operation.Info = "Download time Expired"
+		}
+	}
+
 	return operation, nil
 }
 
-func (d *DownloadCache) Update(requestId string, state DownloadLogState) derrors.Error {
+func (d *DownloadCache) Update(requestId string, state DownloadLogState, info string) derrors.Error {
 	d.Lock()
 	defer d.Unlock()
 
-	log.Debug().Str("requestId", requestId).Interface("state", state).Msg("updating operation state")
+	log.Debug().Str("requestId", requestId).Interface("state", state).Str("info", info).Msg("updating operation state")
 
 	operation, exists := d.cache[requestId]
 	if !exists {
 		return derrors.NewNotFoundError("operation").WithParams(requestId)
 	}
 	operation.State = state
+	operation.Info = info
+
+	if state == Ready {
+		operation.Expiration = time.Now().Add(ExpirationTime).UnixNano()
+		operation.Url = fmt.Sprintf("%s%s.zip", url, requestId)
+	}
 
 	return nil
 }
