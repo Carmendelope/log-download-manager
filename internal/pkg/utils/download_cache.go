@@ -71,7 +71,7 @@ type DownloadCache struct {
 	cache map[string]*DownloadOperation
 }
 
-func NewDownloadCache() *DownloadCache {
+func NewDownloadCache() *DownloadCache	 {
 	return &DownloadCache{
 		cache: make(map[string]*DownloadOperation, 0),
 	}

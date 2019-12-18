@@ -27,6 +27,12 @@ spec:
       - name: log-download-manager
         image: __NPH_REGISTRY_NAMESPACE/log-download-manager:__NPH_VERSION
         imagePullPolicy: Always
+        env:
+        - name: AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: authx-secret
+              key: secret
         securityContext:
           runAsUser: 2000
         args:
@@ -34,6 +40,8 @@ spec:
         - "--applicationsManagerAddress=application-manager.__NPH_NAMESPACE:8910"
         - "--httpPort=8941"
         - "--downloadPath=/download"
+        - "--authSecret=$(AUTH_SECRET)"
+        - "--authHeader=authorization"
         volumeMounts:
         - mountPath: /download
           name: download-volume

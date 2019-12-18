@@ -102,7 +102,8 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 					if updateErr != nil {
 						log.Error().Err(updateErr).Msg("error updating the operation state")
 					}
-					utils.RemoveFile(utils.GetFilePath(requestId))
+					// TODO: Uncomment this!!!!!!!!!!!
+					//utils.RemoveFile(utils.GetFilePath(requestId))
 				}
 				break
 			}

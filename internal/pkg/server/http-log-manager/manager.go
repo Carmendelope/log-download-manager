@@ -17,6 +17,7 @@
 package http_log_manager
 
 import (
+	"github.com/nalej/log-download-manager/internal/pkg/server/interceptor"
 	"github.com/nalej/log-download-manager/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -27,21 +28,46 @@ import (
 // Manager structure with the required clients for http log download operations.
 type Manager struct {
 	opeCache *utils.DownloadCache
+	interceptor *interceptor.Interceptor
 }
 
-func NewManager(opeCache *utils.DownloadCache) Manager {
+func NewManager(opeCache *utils.DownloadCache, secret string, authHeader string) Manager {
 	return Manager{
 		opeCache:opeCache,
+		interceptor: interceptor.NewInterceptor(secret, authHeader),
 	}
 }
 
-func (s *Manager) DownloadFile(prefix string, h http.Handler) http.Handler {
-	if prefix == "" {
-		return h
-	}
+func (m *Manager) DownloadFile(prefix string, h http.Handler) http.Handler {
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		log.Debug().Msg("aqui meto el interceptor")
+
+		if p := strings.TrimPrefix(r.URL.Path, prefix); len(p) < len(r.URL.Path) {
+			r2 := new(http.Request)
+			*r2 = *r
+			r2.URL = new(url.URL)
+			*r2.URL = *r.URL
+			r2.URL.Path = p
+			h.ServeHTTP(w, r2)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+}
+
+func (m *Manager) DownloadFile2() http.Handler {
+	prefix := "/logs/download/"
+	h := http.FileServer(http.Dir("/download"))
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		log.Debug().Msg("aqui meto el interceptor")
+		vErr := m.interceptor.Validate(w, r)
+		if vErr != nil {
+			return
+		}
 
 		if p := strings.TrimPrefix(r.URL.Path, prefix); len(p) < len(r.URL.Path) {
 			r2 := new(http.Request)

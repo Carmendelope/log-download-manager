@@ -44,5 +44,8 @@ func init() {
 		"Applications Manager address (host:port)")
 	runCmd.PersistentFlags().StringVar(&config.DownloadPath, "downloadPath", "/download",
 		"download directory path")
+	runCmd.PersistentFlags().StringVar(&config.AuthHeader, "authHeader", "", "Authorization Header")
+	runCmd.PersistentFlags().StringVar(&config.AuthSecret, "authSecret", "", "Authorization secret")
+
 	rootCmd.AddCommand(runCmd)
 }

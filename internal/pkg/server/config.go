@@ -20,6 +20,7 @@ import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/log-download-manager/version"
 	"github.com/rs/zerolog/log"
+	"strings"
 )
 
 type Config struct {
@@ -33,6 +34,10 @@ type Config struct {
 	ApplicationsManagerAddress string
 	// DownloadPath with the path where the logs are going to be stored
 	DownloadPath string
+	// AuthSecret contains the shared authx secret.
+	AuthSecret string
+	// AuthHeader contains the name of the target header.
+	AuthHeader string
 }
 
 func (conf *Config) Validate() derrors.Error {
@@ -49,6 +54,10 @@ func (conf *Config) Validate() derrors.Error {
 		return derrors.NewInvalidArgumentError("DownloadDir must be set")
 	}
 
+	if conf.AuthHeader == "" || conf.AuthSecret == "" {
+		return derrors.NewInvalidArgumentError("Authorization header and secret must be set")
+	}
+
 	return nil
 }
 
@@ -58,5 +67,6 @@ func (conf *Config) Print() {
 	log.Info().Int("HttpPort", conf.HttpPort).Msg("Http port")
 	log.Info().Str("URL", conf.ApplicationsManagerAddress).Msg("Applications Manager")
 	log.Info().Str("DownloadPath", conf.DownloadPath).Msg("download Path")
+	log.Info().Str("header", conf.AuthHeader).Str("secret", strings.Repeat("*", len(conf.AuthSecret))).Msg("Authorization")
 
 }
