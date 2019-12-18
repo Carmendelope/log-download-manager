@@ -25,6 +25,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:883e2fdbdd0e577187bd8106fec775b1176059af267a7f40eba5308955c67d52"
+  name = "github.com/gorilla/mux"
+  packages = ["."]
+  pruneopts = ""
+  revision = "00bdffe0f3c77e27d2cf6f5c70232a2d3e4d9c15"
+  version = "v1.7.3"
+
+[[projects]]
   digest = "1:b3c5b95e56c06f5aa72cb2500e6ee5f44fcd122872d4fec2023a488e561218bc"
   name = "github.com/hpcloud/tail"
   packages = [
@@ -346,6 +354,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/google/uuid",
+    "github.com/gorilla/mux",
     "github.com/nalej/derrors",
     "github.com/nalej/golang-template/version",
     "github.com/nalej/grpc-application-manager-go",

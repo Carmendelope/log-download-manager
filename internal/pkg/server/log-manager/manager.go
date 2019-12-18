@@ -30,25 +30,27 @@ import (
 
 const filesDirectory = "/download/"
 
-// Manager structure with the required clients for roles operations.
+// Manager structure with the required clients for log-download operations.
 type Manager struct {
 	appManagerClient grpc_application_manager_go.UnifiedLoggingClient
 	opeCache *utils.DownloadCache
+	DownloadDirectory string
 }
 
 // NewManager creates a Manager using a set of clients.
-func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClient) Manager {
+func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClient, opeCache *utils.DownloadCache, downloadDirectory string) Manager {
 	return Manager{
 		appManagerClient: appManagerClient,
-		opeCache: utils.NewDownloadCache(),
+		opeCache: opeCache,
+		DownloadDirectory:downloadDirectory,
 	}
 }
 
 func (m *Manager) getFilePath(requestId string) string {
-	return fmt.Sprintf("%s%s.file", filesDirectory, requestId)
+	return fmt.Sprintf("%s/%s.file", m.DownloadDirectory, requestId)
 }
 func (m *Manager) getZipFilePath(requestId string) string {
-	return fmt.Sprintf("%s%s.zip", filesDirectory, requestId)
+	return fmt.Sprintf("%s/%s.zip", m.DownloadDirectory, requestId)
 }
 
 // download generates the zip file with the log entries

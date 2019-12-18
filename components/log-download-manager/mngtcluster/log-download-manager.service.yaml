@@ -16,5 +16,10 @@ spec:
   type: ClusterIP
   ports:
   - protocol: TCP
+    name: grpc
     port: 8940
     targetPort: 8940
+  - protocol: TCP
+    name: http
+    port: 8941
+    targetPort: 8941

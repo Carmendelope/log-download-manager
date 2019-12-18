@@ -27,18 +27,26 @@ type Config struct {
 	Debug bool
 	// Port where the gRPC API service will listen requests.
 	Port int
+	// HttpPort where the HTTP service will listen request
+	HttpPort int
 	// ApplicationsManagerAddress with the host:port to connect to the Applications manager.
 	ApplicationsManagerAddress string
+	// DownloadPath with the path where the logs are going to be stored
+	DownloadPath string
 }
 
 func (conf *Config) Validate() derrors.Error {
 
-	if conf.Port <= 0 {
+	if conf.Port <= 0 || conf.HttpPort <= 0 {
 		return derrors.NewInvalidArgumentError("ports must be valid")
 	}
 
 	if conf.ApplicationsManagerAddress == "" {
 		return derrors.NewInvalidArgumentError("applicationsManagerAddress must be set")
+	}
+
+	if conf.DownloadPath == "" {
+		return derrors.NewInvalidArgumentError("DownloadDir must be set")
 	}
 
 	return nil
@@ -47,6 +55,8 @@ func (conf *Config) Validate() derrors.Error {
 func (conf *Config) Print() {
 	log.Info().Str("app", version.AppVersion).Str("commit", version.Commit).Msg("Version")
 	log.Info().Int("port", conf.Port).Msg("gRPC port")
+	log.Info().Int("HttpPort", conf.HttpPort).Msg("Http port")
 	log.Info().Str("URL", conf.ApplicationsManagerAddress).Msg("Applications Manager")
+	log.Info().Str("DownloadPath", conf.DownloadPath).Msg("download Path")
 
 }

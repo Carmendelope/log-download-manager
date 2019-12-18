@@ -32,6 +32,8 @@ spec:
         args:
         - "run"
         - "--applicationsManagerAddress=application-manager.__NPH_NAMESPACE:8910"
+        - "--httpPort=8941"
+        - "--downloadPath=/download"
         volumeMounts:
         - mountPath: /download
           name: download-volume
