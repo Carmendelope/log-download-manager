@@ -32,7 +32,7 @@
 
 [[constraint]]
   name = "github.com/nalej/grpc-log-download-manager-go"
-  version = "=v0.0.1"
+  version = "=v0.0.2"
 
 [[constraint]]
   name = "github.com/gorilla/mux"

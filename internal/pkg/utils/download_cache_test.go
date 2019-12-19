@@ -25,6 +25,7 @@ import (
 var _ = ginkgo.Describe("Utils", func() {
 
 	var downloadCache  *DownloadCache
+	var organizationID string
 
 	ginkgo.BeforeSuite(func() {
 		downloadCache = NewDownloadCache("/test/", "nalej.tech")
@@ -32,12 +33,13 @@ var _ = ginkgo.Describe("Utils", func() {
 
 	ginkgo.BeforeEach(func() {
 		downloadCache.Clean()
+		organizationID = uuid.New().String()
 	})
 
 	ginkgo.Context("Adding new operation", func() {
 		ginkgo.It("should be able to add a new one", func() {
 			requestID := uuid.New().String()
-			_, err := downloadCache.Add(requestID, 0, 0)
+			_, err := downloadCache.Add(organizationID, requestID, 0, 0)
 			gomega.Expect(err).To(gomega.Succeed())
 
 			ope, err := downloadCache.Get(requestID)
@@ -48,10 +50,10 @@ var _ = ginkgo.Describe("Utils", func() {
 		})
 		ginkgo.It("should not be able to add one operation twice", func() {
 			requestID := uuid.New().String()
-			_, err := downloadCache.Add(requestID, 0, 0)
+			_, err := downloadCache.Add(organizationID, requestID, 0, 0)
 			gomega.Expect(err).To(gomega.Succeed())
 
-			_, err = downloadCache.Add(requestID, 0, 0)
+			_, err = downloadCache.Add(organizationID, requestID, 0, 0)
 			gomega.Expect(err).NotTo(gomega.Succeed())
 
 
@@ -61,7 +63,7 @@ var _ = ginkgo.Describe("Utils", func() {
 	ginkgo.Context("Removing an operation", func() {
 		ginkgo.It("should be able to remove an operation", func() {
 			requestID := uuid.New().String()
-			_, err := downloadCache.Add(requestID, 0, 0)
+			_, err := downloadCache.Add(organizationID, requestID, 0, 0)
 			gomega.Expect(err).To(gomega.Succeed())
 
 			err = downloadCache.Remove(requestID)
@@ -81,7 +83,7 @@ var _ = ginkgo.Describe("Utils", func() {
 	ginkgo.Context("Updating an operation", func() {
 		ginkgo.It("should be able to update an operation", func() {
 			requestID := uuid.New().String()
-			_, err := downloadCache.Add(requestID, 0, 0)
+			_, err := downloadCache.Add(organizationID, requestID, 0, 0)
 			gomega.Expect(err).To(gomega.Succeed())
 
 			err = downloadCache.Update(requestID, Generating, "")
@@ -105,13 +107,27 @@ var _ = ginkgo.Describe("Utils", func() {
 		ginkgo.It("should be able to list operations", func() {
 			num := 5
 			for i:= 0; i < num; i++ {
-				_, err := downloadCache.Add(uuid.New().String(), 0, 0)
+				_, err := downloadCache.Add(organizationID, uuid.New().String(), 0, 0)
 				gomega.Expect(err).To(gomega.Succeed())
 			}
 
-			list, err := downloadCache.List()
+			list, err := downloadCache.List(organizationID)
 			gomega.Expect(err).To(gomega.Succeed())
 			gomega.Expect(len(list)).Should(gomega.Equal(num))
+
+		})
+	})
+	ginkgo.Context("Listing operations", func() {
+		ginkgo.It("should be able to list an empty list of operations", func() {
+			num := 5
+			for i:= 0; i < num; i++ {
+				_, err := downloadCache.Add(organizationID, uuid.New().String(), 0, 0)
+				gomega.Expect(err).To(gomega.Succeed())
+			}
+
+			list, err := downloadCache.List(uuid.New().String())
+			gomega.Expect(err).To(gomega.Succeed())
+			gomega.Expect(len(list)).Should(gomega.Equal(0))
 
 		})
 	})

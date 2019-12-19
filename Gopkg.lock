@@ -111,12 +111,12 @@
   version = "v0.0.39"
 
 [[projects]]
-  digest = "1:5aa788d8961cf7d63d9a3f7bda416aa374f06c2a46fad2a0a7d5c530cbcc0065"
+  digest = "1:6d73d2765df384574a8b2533ecc87716abd7bad857cf171c2ae6ec6f4fc0b984"
   name = "github.com/nalej/grpc-log-download-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "2b1e9843b549229e7184223a7a7b080d751cfde3"
-  version = "v0.0.1"
+  revision = "309d10e59a5d5746a6626f0d6614d73233cc33f8"
+  version = "v0.0.2"
 
 [[projects]]
   digest = "1:ba1b6bc93bc388dddeb0db8975ca32312921508dfff13803fb58c623c2350908"
@@ -369,6 +369,7 @@
     "github.com/nalej/grpc-application-manager-go",
     "github.com/nalej/grpc-common-go",
     "github.com/nalej/grpc-log-download-manager-go",
+    "github.com/nalej/grpc-organization-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",

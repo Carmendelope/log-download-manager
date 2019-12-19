@@ -43,6 +43,7 @@ var DownloadLogStateFromGRPC = map[grpc_log_download_manager_go.DownloadLogState
 	grpc_log_download_manager_go.DownloadLogState_QUEUED:     Queue,
 	grpc_log_download_manager_go.DownloadLogState_GENERATING: Generating,
 	grpc_log_download_manager_go.DownloadLogState_READY:      Ready,
+	grpc_log_download_manager_go.DownloadLogState_DOWNLOADED: Downloaded,
 	grpc_log_download_manager_go.DownloadLogState_ERROR:      Error,
 }
 
@@ -50,6 +51,7 @@ var DownloadLogStateToGRPC = map[DownloadLogState]grpc_log_download_manager_go.D
 	Queue:      grpc_log_download_manager_go.DownloadLogState_QUEUED,
 	Generating: grpc_log_download_manager_go.DownloadLogState_GENERATING,
 	Ready:      grpc_log_download_manager_go.DownloadLogState_READY,
+	Downloaded: grpc_log_download_manager_go.DownloadLogState_DOWNLOADED,
 	Error:      grpc_log_download_manager_go.DownloadLogState_ERROR,
 }
 
@@ -80,15 +82,28 @@ func (d DownloadLogState) ToString() string {
 }
 
 type DownloadOperation struct {
-	RequestId string
-	State     DownloadLogState
-	// Creation time in ns
-	Started    int64
-	From       int64
-	To         int64
-	Expiration int64
-	Info       string
-	Url        string
+	OrganizationId string
+	RequestId      string
+	State          DownloadLogState
+	Started        int64 // Creation time in ns
+	From           int64
+	To             int64
+	Expiration     int64
+	Info           string
+	Url            string
+}
+
+func (d *DownloadOperation) ToGRPC() *grpc_log_download_manager_go.DownloadLogResponse {
+	return &grpc_log_download_manager_go.DownloadLogResponse{
+		OrganizationId: d.OrganizationId,
+		RequestId:      d.RequestId,
+		From:           d.From,
+		To:             d.To,
+		State:          DownloadLogStateToGRPC[d.State],
+		Url:            d.Url,
+		Expiration:     d.Expiration,
+		Info:           d.Info,
+	}
 }
 
 type DownloadCache struct {
@@ -104,7 +119,7 @@ func NewDownloadCache(url string, publicHost string) *DownloadCache {
 	}
 }
 
-func (d *DownloadCache) Add(requestId string, from int64, to int64) (*DownloadOperation, derrors.Error) {
+func (d *DownloadCache) Add(organizationId string, requestId string, from int64, to int64) (*DownloadOperation, derrors.Error) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -114,11 +129,12 @@ func (d *DownloadCache) Add(requestId string, from int64, to int64) (*DownloadOp
 	}
 
 	op := &DownloadOperation{
-		RequestId: requestId,
-		Started:   time.Now().UnixNano(),
-		State:     Queue,
-		From:      from,
-		To:        to,
+		OrganizationId: organizationId,
+		RequestId:      requestId,
+		Started:        time.Now().UnixNano(),
+		State:          Queue,
+		From:           from,
+		To:             to,
 	}
 	d.cache[requestId] = op
 
@@ -174,22 +190,23 @@ func (d *DownloadCache) Remove(requestId string) derrors.Error {
 	return nil
 }
 
-// TODO: añadir el organizationID
-func (d *DownloadCache) List () ([]*DownloadOperation, derrors.Error) {
+func (d *DownloadCache) List(organizationID string) ([]*DownloadOperation, derrors.Error) {
 
 	d.Lock()
 	defer d.Unlock()
 
-	list := make ([]*DownloadOperation, 0)
+	list := make([]*DownloadOperation, 0)
 
 	for _, ope := range d.cache {
-		list = append(list, ope)
+		if ope.OrganizationId == organizationID {
+			list = append(list, ope)
+		}
 	}
 
 	return list, nil
 
 }
 
-func (d *DownloadCache) Clean(){
+func (d *DownloadCache) Clean() {
 	d.cache = make(map[string]*DownloadOperation, 0)
 }

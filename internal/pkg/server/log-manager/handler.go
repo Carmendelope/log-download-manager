@@ -64,7 +64,7 @@ func (h *Handler) Check(_ context.Context, request *grpc_log_download_manager_go
 }
 
 
-func (h *Handler) List(_ context.Context, organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponse, error) {
+func (h *Handler) List(_ context.Context, organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponseList, error) {
 
 	vErr := entities.ValidOrganizationId(organizationID)
 	if vErr != nil {
