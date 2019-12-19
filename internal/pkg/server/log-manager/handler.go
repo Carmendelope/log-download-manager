@@ -19,6 +19,7 @@ package log_manager
 import (
 	"context"
 	"github.com/nalej/grpc-log-download-manager-go"
+	"github.com/nalej/grpc-organization-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/nalej/log-download-manager/internal/pkg/entities"
 )
@@ -50,7 +51,26 @@ func (h *Handler) DownloadLog(_ context.Context, request *grpc_log_download_mana
 
 // Check asks for a download operation state
 func (h *Handler) Check(_ context.Context, request *grpc_log_download_manager_go.DownloadRequestId) (*grpc_log_download_manager_go.DownloadLogResponse, error) {
+
+	vErr := entities.ValidDownloadRequestId(request)
+	if vErr != nil {
+		return nil, conversions.ToGRPCError(vErr)
+	}
 	response, err := h.Manager.Check(request)
+	if err != nil {
+		return nil, conversions.ToDerror(err)
+	}
+	return response, nil
+}
+
+
+func (h *Handler) List(_ context.Context, organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponseList, error) {
+
+	vErr := entities.ValidOrganizationId(organizationID)
+	if vErr != nil {
+		return nil, conversions.ToGRPCError(vErr)
+	}
+	response, err := h.Manager.List(organizationID)
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}

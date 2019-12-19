@@ -52,7 +52,7 @@ var _ = ginkgo.Describe("Zip Files", func() {
 				{Msg:"entry 3", Timestamp:time.Now().UnixNano()},
 			}
 			// source, target
-			AppendResponses(responses, path)
+			AppendResponses(responses, path, false)
 		})
 		ginkgo.It("should be create zip file", func() {
 
@@ -66,7 +66,7 @@ var _ = ginkgo.Describe("Zip Files", func() {
 				{Msg:"entry 3", Timestamp:time.Now().UnixNano()},
 			}
 			// source, target
-			err = AppendResponses(responses, path)
+			err = AppendResponses(responses, path, false)
 			gomega.Expect(err).To(gomega.Succeed())
 
 			err = ZipFiles(fmt.Sprintf("%stest.zip",testDir), []string{path})

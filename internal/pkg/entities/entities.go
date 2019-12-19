@@ -83,3 +83,4 @@ func Sort(elements []*grpc_application_manager_go.LogEntryResponse, order grpc_c
 	}
 	return elements
 }
+

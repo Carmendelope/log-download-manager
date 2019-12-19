@@ -23,26 +23,26 @@ import (
 	"github.com/nalej/grpc-application-manager-go"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-log-download-manager-go"
+	"github.com/nalej/grpc-organization-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/nalej/log-download-manager/internal/pkg/entities"
 	"github.com/nalej/log-download-manager/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
 )
 
-
 // Manager structure with the required clients for roles operations.
 type Manager struct {
-	appManagerClient grpc_application_manager_go.UnifiedLoggingClient
-	opeCache *utils.DownloadCache
+	appManagerClient  grpc_application_manager_go.UnifiedLoggingClient
+	opeCache          *utils.DownloadCache
 	DownloadDirectory string
 }
 
 // NewManager creates a Manager using a set of clients.
 func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClient, opeCache *utils.DownloadCache, downloadDirectory string) Manager {
 	return Manager{
-		appManagerClient: appManagerClient,
-		opeCache: opeCache,
-		DownloadDirectory:downloadDirectory,
+		appManagerClient:  appManagerClient,
+		opeCache:          opeCache,
+		DownloadDirectory: downloadDirectory,
 	}
 }
 
@@ -80,7 +80,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 			log.Debug().Int("responses", len(response.Entries)).Msg("entries retrieved")
 			if len(response.Entries) > 0 {
 				// 4.- Copy the log entries in a file ordered
-				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), utils.GetFilePath(m.DownloadDirectory, requestId))
+				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), utils.GetFilePath(m.DownloadDirectory, requestId), request.IncludeMetadata)
 				if err != nil {
 					updateErr := m.opeCache.Update(requestId, utils.Error, err.Error())
 					if updateErr != nil {
@@ -88,7 +88,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 					}
 					break
 				}
-			}else{
+			} else {
 				// 5.- If there is no more entries -> create zip file
 				zipErr := utils.ZipFiles(utils.GetZipFilePath(m.DownloadDirectory, requestId), []string{utils.GetFilePath(m.DownloadDirectory, requestId)})
 
@@ -97,7 +97,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 					if updateErr != nil {
 						log.Error().Err(updateErr).Msg("error updating the operation state")
 					}
-				}else{
+				} else {
 					updateErr := m.opeCache.Update(requestId, utils.Ready, "file generated")
 					if updateErr != nil {
 						log.Error().Err(updateErr).Msg("error updating the operation state")
@@ -108,7 +108,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 			}
 			if request.Order.Order == grpc_common_go.Order_ASC {
 				searchRequest.From = response.To + 1000000
-			}else{
+			} else {
 				searchRequest.To = response.From - 1000000
 			}
 		}
@@ -121,7 +121,7 @@ func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogR
 
 	log.Debug().Interface("request", request).Msg("DownloadLog request")
 	requestId := uuid.New().String()
-	op, err := m.opeCache.Add(requestId, request.From, request.To)
+	op, err := m.opeCache.Add(request.OrganizationId, requestId, request.From, request.To)
 	if err != nil {
 		return nil, err
 	}
@@ -133,19 +133,34 @@ func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogR
 
 	return &grpc_log_download_manager_go.DownloadLogResponse{
 		OrganizationId: request.OrganizationId,
-		RequestId: op.RequestId,
-		From: op.From,
-		To: op.To,
-		State: utils.DownloadLogStateToGRPC[op.State],
+		RequestId:      op.RequestId,
+		From:           op.From,
+		To:             op.To,
+		State:          utils.DownloadLogStateToGRPC[op.State],
 	}, nil
 }
 
 // Check asks for a download operation state
 func (m *Manager) Check(request *grpc_log_download_manager_go.DownloadRequestId) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
-	operation, err  := m.opeCache.Get(request.RequestId)
+	operation, err := m.opeCache.Get(request.RequestId)
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}
 
 	return entities.NewDownloadLogResponse(request, operation), nil
+}
+
+// List retrieves a list of LogResponses
+func (m *Manager) List(organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponseList, derrors.Error) {
+	list, err := m.opeCache.List(organizationID.OrganizationId)
+	if err != nil {
+		return nil, conversions.ToDerror(err)
+	}
+	logResponseList := make([]*grpc_log_download_manager_go.DownloadLogResponse, len(list))
+	for i, ope := range list {
+		logResponseList[i] = ope.ToGRPC()
+	}
+	return &grpc_log_download_manager_go.DownloadLogResponseList{
+		Responses: logResponseList,
+	}, nil
 }
