@@ -26,7 +26,7 @@ var _ = ginkgo.Describe("Utils", func() {
 
 	var downloadCache  *DownloadCache
 	ginkgo.BeforeSuite(func() {
-		downloadCache = NewDownloadCache()
+		downloadCache = NewDownloadCache("/test/", "nalej.tech")
 	})
 
 	ginkgo.Context("Adding new operation", func() {
