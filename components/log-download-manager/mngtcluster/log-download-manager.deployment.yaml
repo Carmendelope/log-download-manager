@@ -33,6 +33,11 @@ spec:
             secretKeyRef:
               name: authx-secret
               key: secret
+        - name: MANAGEMENT_PUBLIC_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: cluster-config
+                key: management_public_host
         securityContext:
           runAsUser: 2000
         args:
@@ -42,6 +47,7 @@ spec:
         - "--downloadPath=/download"
         - "--authSecret=$(AUTH_SECRET)"
         - "--authHeader=authorization"
+        - "--managementPublicHost=$(MANAGEMENT_PUBLIC_HOST)"
         volumeMounts:
         - mountPath: /download
           name: download-volume

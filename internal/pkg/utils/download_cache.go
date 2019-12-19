@@ -29,8 +29,6 @@ type DownloadLogState int
 
 const (
 	ExpirationTime = 10 * time.Minute
-	url            = "/logs/download/"
-	filesDirectory = "/download/"
 )
 
 const (
@@ -38,6 +36,7 @@ const (
 	Generating
 	Ready
 	Error
+	Downloaded
 )
 
 var DownloadLogStateFromGRPC = map[grpc_log_download_manager_go.DownloadLogState]DownloadLogState{
@@ -52,6 +51,32 @@ var DownloadLogStateToGRPC = map[DownloadLogState]grpc_log_download_manager_go.D
 	Generating: grpc_log_download_manager_go.DownloadLogState_GENERATING,
 	Ready:      grpc_log_download_manager_go.DownloadLogState_READY,
 	Error:      grpc_log_download_manager_go.DownloadLogState_ERROR,
+}
+
+func (d DownloadLogState) ToString() string {
+	switch d {
+	case Queue:
+		{
+			return "QUEUED"
+		}
+	case Generating:
+		{
+			return "GENERATING"
+		}
+	case Ready:
+		{
+			return "READY"
+		}
+	case Error:
+		{
+			return "ERROR"
+		}
+	case Downloaded:
+		{
+			return "DOWNLOADED"
+		}
+	}
+	return ""
 }
 
 type DownloadOperation struct {
@@ -69,11 +94,13 @@ type DownloadOperation struct {
 type DownloadCache struct {
 	sync.Mutex
 	cache map[string]*DownloadOperation
+	url   string
 }
 
-func NewDownloadCache() *DownloadCache	 {
+func NewDownloadCache(url string, publicHost string) *DownloadCache {
 	return &DownloadCache{
 		cache: make(map[string]*DownloadOperation, 0),
+		url:   fmt.Sprintf("https://web.%s%s)", publicHost, url),
 	}
 }
 
@@ -106,15 +133,7 @@ func (d *DownloadCache) Get(requestId string) (*DownloadOperation, derrors.Error
 
 	operation, exists := d.cache[requestId]
 	if !exists {
-		return nil, derrors.NewNotFoundError("operation").WithParams(requestId)
-	}
-
-	// check if it is expired and if it is -> update it! (error, expired)
-	if operation.State == Ready {
-		if operation.Expiration < time.Now().UnixNano() {
-			operation.State = Error
-			operation.Info = "Download time Expired"
-		}
+		return nil, derrors.NewNotFoundError("download operation").WithParams(requestId)
 	}
 
 	return operation, nil
@@ -135,7 +154,7 @@ func (d *DownloadCache) Update(requestId string, state DownloadLogState, info st
 
 	if state == Ready {
 		operation.Expiration = time.Now().Add(ExpirationTime).UnixNano()
-		operation.Url = fmt.Sprintf("%s%s.zip", url, requestId)
+		operation.Url = fmt.Sprintf("%s%s.zip", d.url, requestId)
 	}
 
 	return nil

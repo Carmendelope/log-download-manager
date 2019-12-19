@@ -32,7 +32,7 @@ import (
 	"net/http"
 )
 
-const PathPrefix = "/logs/download/"
+const PathPrefix = "/v1/logs/download/"
 
 // Service structure with the configuration and the gRPC server.
 type Service struct {
@@ -46,7 +46,7 @@ func NewService(conf Config) *Service {
 	return &Service{
 		Configuration: conf,
 		Router:        mux.NewRouter(),
-		OpeCache:      utils.NewDownloadCache(),
+		OpeCache:      utils.NewDownloadCache(PathPrefix, conf.ManagementPublicHost),
 	}
 }
 
@@ -95,13 +95,12 @@ func (s *Service) LaunchGRPC() error {
 }
 
 func (s *Service) LaunchHTTP() error {
-	log.Debug().Msg("Server started on port 8941")
 
-	httpLogManager := http_log_manager.NewManager(s.OpeCache, s.Configuration.AuthSecret, s.Configuration.AuthHeader)
+	httpLogManager := http_log_manager.NewManager(s.OpeCache, s.Configuration.AuthSecret, s.Configuration.AuthHeader, PathPrefix, s.Configuration.DownloadPath)
 	httpLogHandler := http_log_manager.NewHandler(httpLogManager)
 
 	//s.Router.PathPrefix(PathPrefix).Handler(httpLogHandler.DownloadFile(PathPrefix, http.FileServer(http.Dir(s.Configuration.DownloadPath))))
-	s.Router.PathPrefix(PathPrefix).Handler(httpLogHandler.DownloadFile2())
+	s.Router.PathPrefix(PathPrefix).Handler(httpLogHandler.DownloadFile())
 
 	log.Info().Int("port", s.Configuration.HttpPort).Msg("Launching Http server")
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", s.Configuration.HttpPort), s.Router); err != nil {

@@ -54,10 +54,9 @@ func NewInterceptor(secret string, authHeader string) *Interceptor {
 	return &Interceptor{secret: secret, authHeader:authHeader}
 }
 
-func (i *Interceptor) Validate(w http.ResponseWriter, r *http.Request) derrors.Error {
-	log.Debug().Interface("Header", r.Header).Msg("Header!!")
+func (i *Interceptor) Validate(r *http.Request) derrors.Error {
 
-	vErr := i.checkJWT(w, r)
+	vErr := i.checkJWT(r)
 	if vErr != nil {
 		return vErr
 	}
@@ -65,12 +64,11 @@ func (i *Interceptor) Validate(w http.ResponseWriter, r *http.Request) derrors.E
 	return nil
 }
 
-func (i *Interceptor) checkJWT(w http.ResponseWriter, r *http.Request) derrors.Error {
+func (i *Interceptor) checkJWT(r *http.Request) derrors.Error {
 
 	// extract Token
 	token := r.Header.Get(i.authHeader)
 	if token == "" {
-		http.Error(w, "token is not supplied", http.StatusUnauthorized)
 		return derrors.NewUnauthenticatedError("token is not supplied")
 	}
 

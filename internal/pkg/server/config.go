@@ -38,6 +38,8 @@ type Config struct {
 	AuthSecret string
 	// AuthHeader contains the name of the target header.
 	AuthHeader string
+	// ManagementPublicHost contains the public host of the management cluster
+	ManagementPublicHost string
 }
 
 func (conf *Config) Validate() derrors.Error {
@@ -48,6 +50,10 @@ func (conf *Config) Validate() derrors.Error {
 
 	if conf.ApplicationsManagerAddress == "" {
 		return derrors.NewInvalidArgumentError("applicationsManagerAddress must be set")
+	}
+
+	if conf.ManagementPublicHost == "" {
+		return derrors.NewInvalidArgumentError("managementPublicHost must be set")
 	}
 
 	if conf.DownloadPath == "" {
@@ -66,6 +72,7 @@ func (conf *Config) Print() {
 	log.Info().Int("port", conf.Port).Msg("gRPC port")
 	log.Info().Int("HttpPort", conf.HttpPort).Msg("Http port")
 	log.Info().Str("URL", conf.ApplicationsManagerAddress).Msg("Applications Manager")
+	log.Info().Str("Host", conf.ManagementPublicHost).Msg("Public Host")
 	log.Info().Str("DownloadPath", conf.DownloadPath).Msg("download Path")
 	log.Info().Str("header", conf.AuthHeader).Str("secret", strings.Repeat("*", len(conf.AuthSecret))).Msg("Authorization")
 

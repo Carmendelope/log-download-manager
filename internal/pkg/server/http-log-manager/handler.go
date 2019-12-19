@@ -31,10 +31,6 @@ func NewHandler(manager Manager) *Handler {
 	return &Handler{Manager:manager}
 }
 
-func (h *Handler) DownloadFile(prefix string, handler http.Handler) http.Handler {
-	return h.Manager.DownloadFile(prefix, handler)
-}
-
-func (h *Handler) DownloadFile2() http.Handler {
-	return h.Manager.DownloadFile2()
+func (h *Handler) DownloadFile() http.Handler {
+	return h.Manager.DownloadFile()
 }
