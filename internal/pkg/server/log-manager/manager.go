@@ -80,7 +80,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 			log.Debug().Int("responses", len(response.Entries)).Msg("entries retrieved")
 			if len(response.Entries) > 0 {
 				// 4.- Copy the log entries in a file ordered
-				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), utils.GetFilePath(m.DownloadDirectory, requestId))
+				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), utils.GetFilePath(m.DownloadDirectory, requestId), request.IncludeMetadata)
 				if err != nil {
 					updateErr := m.opeCache.Update(requestId, utils.Error, err.Error())
 					if updateErr != nil {

@@ -25,28 +25,15 @@ import (
 	"os"
 	"time"
 )
+
+const logWithMetadata = "[%s][DESCRIPTOR-%s][INSTANCE-%s][SERVICE-GROUP-%s][SERVICE-%s]:%s\n"
+
 ////////////////////
 // InitializeFile create the file and write the header
 func InitializeFile(target string, includeMetadata bool) error {
 	f, err := os.Create(target)
 	if err != nil {
 		return err
-	}
-
-	if includeMetadata {
-		// TODO: add all the fields
-		_, err = f.WriteString("TIMESTAMP - MESSAGE\n")
-		if err != nil {
-			f.Close()
-			return err
-		}
-	} else {
-		_, err = f.WriteString("TIMESTAMP - MESSAGE\n")
-		if err != nil {
-			f.Close()
-			return err
-		}
-
 	}
 	err = f.Close()
 	if err != nil {
@@ -57,17 +44,23 @@ func InitializeFile(target string, includeMetadata bool) error {
 	return nil
 }
 
-func AppendResponses(responses []*grpc_application_manager_go.LogEntryResponse, target string) error {
+func AppendResponses(responses []*grpc_application_manager_go.LogEntryResponse, target string, includeMetadata bool) error {
+	log.Debug().Bool("includeMedatada", includeMetadata).Msg("AppendResponse")
 	f, err := os.OpenFile(target, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
-
+	var writeErr error
 	for _, response := range responses {
-		_, err = f.WriteString(fmt.Sprintf("%s - %s\n", time.Unix(0, response.Timestamp), response.Msg))
-		if err != nil {
+		if includeMetadata{
+			_, writeErr = f.WriteString(fmt.Sprintf(logWithMetadata, time.Unix(0, response.Timestamp), response.AppDescriptorName, response.AppInstanceName,
+				response.ServiceGroupName, response.ServiceName, response.Msg))
+		}else {
+			_, writeErr = f.WriteString(fmt.Sprintf("%s\n", response.Msg))
+		}
+		if writeErr != nil {
 			f.Close()
-			return err
+			return writeErr
 		}
 	}
 	err = f.Close()

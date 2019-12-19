@@ -69,6 +69,8 @@ func (m *Manager) ValidToDownload(ope *utils.DownloadOperation) derrors.Error {
 			errMsg := "download operation is not ready. State (EXPIRED)"
 			return derrors.NewPermissionDeniedError(errMsg)
 		}
+	case utils.Downloaded:
+		return derrors.NewPermissionDeniedError("the results of this operation have already been downloaded")
 	}
 
 	return nil
@@ -98,7 +100,7 @@ func (m *Manager) DownloadFile() http.Handler {
 		}
 		vOpeErr := m.ValidToDownload(ope)
 		if vOpeErr != nil {
-			http.Error(w, getErr.Error(), http.StatusUnauthorized)
+			http.Error(w, vOpeErr.Error(), http.StatusUnauthorized)
 			return
 		}
 
@@ -109,20 +111,7 @@ func (m *Manager) DownloadFile() http.Handler {
 		r2.URL.Path = file
 		h.ServeHTTP(w, r2)
 
-
-		err = m.opeCache.Update(requestId, utils.Downloaded, "")
-		/*
-		err = m.opeCache.Remove(requestId)
-		if err != nil {
-			log.Warn().Str("requestId", requestId).Msg("unable to delete operation")
-		}
-
-		removeErr := utils.RemoveFile(utils.GetZipFilePath(m.DownloadDirectory, requestId))
-
-		if removeErr != nil {
-			log.Warn().Str("file", file).Msg("unable to remove file")
-		}
-		*/
-
+		user:=r.Header.Get(interceptor.UserID)
+		err = m.opeCache.Update(requestId, utils.Downloaded, user)
 	})
 }

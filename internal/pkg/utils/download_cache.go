@@ -29,6 +29,7 @@ type DownloadLogState int
 
 const (
 	ExpirationTime = 10 * time.Minute
+	ExpiredMsg = "Expired"
 )
 
 const (
@@ -152,6 +153,11 @@ func (d *DownloadCache) Get(requestId string) (*DownloadOperation, derrors.Error
 		return nil, derrors.NewNotFoundError("download operation").WithParams(requestId)
 	}
 
+	if operation.State == Ready && operation.Expiration < time.Now().UnixNano(){
+		operation.State = Error
+		operation.Info = ExpiredMsg
+	}
+
 	return operation, nil
 }
 
@@ -199,6 +205,10 @@ func (d *DownloadCache) List(organizationID string) ([]*DownloadOperation, derro
 
 	for _, ope := range d.cache {
 		if ope.OrganizationId == organizationID {
+			if ope.State == Ready && ope.Expiration < time.Now().UnixNano(){
+				ope.State = Error
+				ope.Info = ExpiredMsg
+			}
 			list = append(list, ope)
 		}
 	}

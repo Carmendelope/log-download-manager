@@ -19,7 +19,6 @@ package interceptor
 import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/nalej/derrors"
-	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -86,8 +85,6 @@ func (i *Interceptor) checkJWT(r *http.Request) derrors.Error {
 
 	r.Header.Add(UserID, userAuth.UserID)
 	r.Header.Add(OrganizationID, userAuth.OrganizationID)
-	log.Debug().Interface("claim", userAuth).Msg("Claim")
-	log.Debug().Interface("Header", r.Header).Msg("Header!!")
 
 	// check the role permissions
 	found := false
