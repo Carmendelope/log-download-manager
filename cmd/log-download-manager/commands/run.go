@@ -39,7 +39,14 @@ var runCmd = &cobra.Command{
 
 func init() {
 	runCmd.Flags().IntVar(&config.Port, "port", 8940, "Port to launch the log-download-manager gRPC")
+	runCmd.Flags().IntVar(&config.HttpPort, "httpPort", 8941, "Port to launch the log-download-manager Http")
 	runCmd.PersistentFlags().StringVar(&config.ApplicationsManagerAddress, "applicationsManagerAddress", "localhost:8910",
 		"Applications Manager address (host:port)")
+	runCmd.PersistentFlags().StringVar(&config.DownloadPath, "downloadPath", "/download",
+		"download directory path")
+	runCmd.PersistentFlags().StringVar(&config.AuthHeader, "authHeader", "", "Authorization Header")
+	runCmd.PersistentFlags().StringVar(&config.AuthSecret, "authSecret", "", "Authorization secret")
+	runCmd.PersistentFlags().StringVar(&config.ManagementPublicHost, "managementPublicHost", "", "Management publish host")
+
 	rootCmd.AddCommand(runCmd)
 }

@@ -33,3 +33,11 @@
 [[constraint]]
   name = "github.com/nalej/grpc-log-download-manager-go"
   version = "=v0.0.1"
+
+[[constraint]]
+  name = "github.com/gorilla/mux"
+  version = "=v1.7.3"
+
+[[constraint]]
+  name = "github.com/dgrijalva/jwt-go"
+  version = "v3.2.0"

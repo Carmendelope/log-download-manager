@@ -17,6 +17,7 @@
 package log_manager
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-application-manager-go"
@@ -29,18 +30,28 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+
 // Manager structure with the required clients for roles operations.
 type Manager struct {
 	appManagerClient grpc_application_manager_go.UnifiedLoggingClient
 	opeCache *utils.DownloadCache
+	DownloadDirectory string
 }
 
 // NewManager creates a Manager using a set of clients.
-func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClient) Manager {
+func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClient, opeCache *utils.DownloadCache, downloadDirectory string) Manager {
 	return Manager{
 		appManagerClient: appManagerClient,
-		opeCache: utils.NewDownloadCache(),
+		opeCache: opeCache,
+		DownloadDirectory:downloadDirectory,
 	}
+}
+
+func (m *Manager) getFilePath(requestId string) string {
+	return fmt.Sprintf("%s/%s.file", m.DownloadDirectory, requestId)
+}
+func (m *Manager) getZipFilePath(requestId string) string {
+	return fmt.Sprintf("%s/%s.zip", m.DownloadDirectory, requestId)
 }
 
 // download generates the zip file with the log entries
@@ -70,7 +81,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 			log.Debug().Int("responses", len(response.Entries)).Msg("entries retrieved")
 			if len(response.Entries) > 0 {
 				// 4.- Copy the log entries in a file ordered
-				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), utils.GetFilePath(requestId))
+				err = utils.AppendResponses(entities.Sort(response.Entries, request.Order.Order), utils.GetFilePath(m.DownloadDirectory, requestId))
 				if err != nil {
 					updateErr := m.opeCache.Update(requestId, utils.Error, err.Error())
 					if updateErr != nil {
@@ -80,7 +91,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 				}
 			}else{
 				// 5.- If there is no more entries -> create zip file
-				zipErr := utils.ZipFiles(utils.GetZipFilePath(requestId), []string{utils.GetFilePath(requestId)})
+				zipErr := utils.ZipFiles(utils.GetZipFilePath(m.DownloadDirectory, requestId), []string{utils.GetFilePath(m.DownloadDirectory, requestId)})
 
 				if zipErr != nil {
 					updateErr := m.opeCache.Update(requestId, utils.Error, zipErr.Error())
@@ -92,7 +103,7 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 					if updateErr != nil {
 						log.Error().Err(updateErr).Msg("error updating the operation state")
 					}
-					utils.RemoveFile(utils.GetFilePath(requestId))
+					utils.RemoveFile(utils.GetFilePath(m.DownloadDirectory, requestId))
 				}
 				break
 			}
@@ -117,7 +128,7 @@ func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogR
 	}
 
 	// Create the file
-	utils.InitializeFile(utils.GetFilePath(requestId), request.IncludeMetadata)
+	utils.InitializeFile(utils.GetFilePath(m.DownloadDirectory, requestId), request.IncludeMetadata)
 
 	go m.download(request, requestId)
 

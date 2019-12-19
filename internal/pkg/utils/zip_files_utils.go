@@ -27,13 +27,13 @@ import (
 )
 ////////////////////
 // InitializeFile create the file and write the header
-func InitializeFile(target string, include_metadata bool) error {
+func InitializeFile(target string, includeMetadata bool) error {
 	f, err := os.Create(target)
 	if err != nil {
 		return err
 	}
 
-	if include_metadata {
+	if includeMetadata {
 		// TODO: add all the fields
 		_, err = f.WriteString("TIMESTAMP - MESSAGE\n")
 		if err != nil {
@@ -138,9 +138,9 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	return err
 }
 
-func GetFilePath(requestId string) string {
+func GetFilePath(filesDirectory string, requestId string) string {
 	return fmt.Sprintf("%s%s.file", filesDirectory, requestId)
 }
-func GetZipFilePath(requestId string) string {
+func GetZipFilePath(filesDirectory string, requestId string) string {
 	return fmt.Sprintf("%s%s.zip", filesDirectory, requestId)
 }
