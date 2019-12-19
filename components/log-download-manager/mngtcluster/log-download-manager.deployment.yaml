@@ -34,17 +34,17 @@ spec:
               name: authx-secret
               key: secret
         - name: MANAGEMENT_PUBLIC_HOST
-            valueFrom:
-              configMapKeyRef:
-                name: cluster-config
-                key: management_public_host
+          valueFrom:
+            configMapKeyRef:
+              name: management-config
+              key: public_host
         securityContext:
           runAsUser: 2000
         args:
         - "run"
         - "--applicationsManagerAddress=application-manager.__NPH_NAMESPACE:8910"
         - "--httpPort=8941"
-        - "--downloadPath=/download"
+        - "--downloadPath=/download/"
         - "--authSecret=$(AUTH_SECRET)"
         - "--authHeader=authorization"
         - "--managementPublicHost=$(MANAGEMENT_PUBLIC_HOST)"

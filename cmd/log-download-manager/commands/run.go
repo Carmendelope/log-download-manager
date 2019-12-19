@@ -46,6 +46,7 @@ func init() {
 		"download directory path")
 	runCmd.PersistentFlags().StringVar(&config.AuthHeader, "authHeader", "", "Authorization Header")
 	runCmd.PersistentFlags().StringVar(&config.AuthSecret, "authSecret", "", "Authorization secret")
+	runCmd.PersistentFlags().StringVar(&config.ManagementPublicHost, "managementPublicHost", "", "Management publish host")
 
 	rootCmd.AddCommand(runCmd)
 }

@@ -100,7 +100,7 @@ type DownloadCache struct {
 func NewDownloadCache(url string, publicHost string) *DownloadCache {
 	return &DownloadCache{
 		cache: make(map[string]*DownloadOperation, 0),
-		url:   fmt.Sprintf("https://web.%s%s)", publicHost, url),
+		url:   fmt.Sprintf("https://web.%s%s", publicHost, url),
 	}
 }
 
