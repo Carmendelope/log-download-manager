@@ -154,3 +154,23 @@ func (d *DownloadCache) Remove(requestId string) derrors.Error {
 
 	return nil
 }
+
+// TODO: añadir el organizationID
+func (d *DownloadCache) List () ([]*DownloadOperation, derrors.Error) {
+
+	d.Lock()
+	defer d.Unlock()
+
+	list := make ([]*DownloadOperation, 0)
+
+	for _, ope := range d.cache {
+		list = append(list, ope)
+	}
+
+	return list, nil
+
+}
+
+func (d *DownloadCache) Clean(){
+	d.cache = make(map[string]*DownloadOperation, 0)
+}

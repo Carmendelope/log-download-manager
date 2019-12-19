@@ -25,8 +25,13 @@ import (
 var _ = ginkgo.Describe("Utils", func() {
 
 	var downloadCache  *DownloadCache
+
 	ginkgo.BeforeSuite(func() {
 		downloadCache = NewDownloadCache()
+	})
+
+	ginkgo.BeforeEach(func() {
+		downloadCache.Clean()
 	})
 
 	ginkgo.Context("Adding new operation", func() {
@@ -94,7 +99,19 @@ var _ = ginkgo.Describe("Utils", func() {
 			err := downloadCache.Update(requestID, Generating, "")
 			gomega.Expect(err).NotTo(gomega.Succeed())
 
+		})
+	})
+	ginkgo.Context("Listing operations", func() {
+		ginkgo.It("should be able to list operations", func() {
+			num := 5
+			for i:= 0; i < num; i++ {
+				_, err := downloadCache.Add(uuid.New().String(), 0, 0)
+				gomega.Expect(err).To(gomega.Succeed())
+			}
 
+			list, err := downloadCache.List()
+			gomega.Expect(err).To(gomega.Succeed())
+			gomega.Expect(len(list)).Should(gomega.Equal(num))
 
 		})
 	})

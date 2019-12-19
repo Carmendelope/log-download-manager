@@ -22,6 +22,7 @@ import (
 	"github.com/nalej/grpc-application-manager-go"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-log-download-manager-go"
+	"github.com/nalej/grpc-organization-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/nalej/log-download-manager/internal/pkg/entities"
 	"github.com/nalej/log-download-manager/internal/pkg/utils"
@@ -137,4 +138,8 @@ func (m *Manager) Check(request *grpc_log_download_manager_go.DownloadRequestId)
 	}
 
 	return entities.NewDownloadLogResponse(request, operation), nil
+}
+
+func (m *Manager) List(organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
+	return nil, nil
 }
