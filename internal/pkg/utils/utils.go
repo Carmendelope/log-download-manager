@@ -18,14 +18,13 @@ package utils
 
 import (
 	"context"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/metadata"
 	"time"
 )
 
 const (
 	DefaultTimeout  = time.Minute
-	UserID = "user-id"
+	UserID = "userid"
 )
 
 func GetContext() (context.Context, context.CancelFunc) {
@@ -41,7 +40,6 @@ func GetUserFromContext(ctx context.Context) string {
 			userID = user[0]
 		}
 	}
-	log.Debug().Str("userID", userID).Msg("user identifier")
 
 	return userID
 }

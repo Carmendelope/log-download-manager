@@ -149,16 +149,15 @@ func (m *Manager) Check(request *grpc_log_download_manager_go.DownloadRequestId,
 
 // List retrieves a list of LogResponses
 func (m *Manager) List(organizationID *grpc_organization_go.OrganizationId, userID string) (*grpc_log_download_manager_go.DownloadLogResponseList, derrors.Error) {
+
 	list, err := m.opeCache.List(organizationID.OrganizationId)
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}
 	logResponseList := make([]*grpc_log_download_manager_go.DownloadLogResponse, 0)
 	for _, ope := range list {
-		if ope.UserId != "" && userID != "" {
-			if ope.UserId == userID {
-				logResponseList = append(logResponseList, ope.ToGRPC())
-			}
+		if (ope.UserId != "" && userID != ""  && ope.UserId == userID ) || (ope.UserId == "" || userID == ""){
+			logResponseList = append(logResponseList, ope.ToGRPC())
 		}
 
 	}
