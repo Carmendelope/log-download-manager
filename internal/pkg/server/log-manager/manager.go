@@ -17,7 +17,6 @@
 package log_manager
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-application-manager-go"
@@ -46,12 +45,6 @@ func NewManager(appManagerClient grpc_application_manager_go.UnifiedLoggingClien
 	}
 }
 
-func (m *Manager) getFilePath(requestId string) string {
-	return fmt.Sprintf("%s/%s.file", m.DownloadDirectory, requestId)
-}
-func (m *Manager) getZipFilePath(requestId string) string {
-	return fmt.Sprintf("%s/%s.zip", m.DownloadDirectory, requestId)
-}
 
 // download generates the zip file with the log entries
 func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequest, requestId string) {
@@ -117,11 +110,11 @@ func (m *Manager) download(request *grpc_log_download_manager_go.DownloadLogRequ
 }
 
 // DownloadLog asks for a logs download operation. These logs are going to be stored in a zip file
-func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogRequest) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
+func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogRequest, userID string) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
 
 	log.Debug().Interface("request", request).Msg("DownloadLog request")
 	requestId := uuid.New().String()
-	op, err := m.opeCache.Add(request.OrganizationId, requestId, request.From, request.To, m.DownloadDirectory)
+	op, err := m.opeCache.Add(request.OrganizationId, requestId, request.From, request.To, m.DownloadDirectory, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -141,24 +134,31 @@ func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogR
 }
 
 // Check asks for a download operation state
-func (m *Manager) Check(request *grpc_log_download_manager_go.DownloadRequestId) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
+func (m *Manager) Check(request *grpc_log_download_manager_go.DownloadRequestId, userID string) (*grpc_log_download_manager_go.DownloadLogResponse, derrors.Error) {
 	operation, err := m.opeCache.Get(request.RequestId)
 	if err != nil {
 		return nil, conversions.ToDerror(err)
+	}
+
+	if operation.UserId != userID {
+		return nil, derrors.NewPermissionDeniedError("operation not allowed for the user").WithParams(userID)
 	}
 
 	return entities.NewDownloadLogResponse(request, operation), nil
 }
 
 // List retrieves a list of LogResponses
-func (m *Manager) List(organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponseList, derrors.Error) {
+func (m *Manager) List(organizationID *grpc_organization_go.OrganizationId, userID string) (*grpc_log_download_manager_go.DownloadLogResponseList, derrors.Error) {
 	list, err := m.opeCache.List(organizationID.OrganizationId)
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}
-	logResponseList := make([]*grpc_log_download_manager_go.DownloadLogResponse, len(list))
-	for i, ope := range list {
-		logResponseList[i] = ope.ToGRPC()
+	logResponseList := make([]*grpc_log_download_manager_go.DownloadLogResponse, 0)
+	for _, ope := range list {
+		if ope.UserId == userID{
+			logResponseList = append(logResponseList, ope.ToGRPC())
+		}
+
 	}
 	return &grpc_log_download_manager_go.DownloadLogResponseList{
 		Responses: logResponseList,

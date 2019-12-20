@@ -34,7 +34,7 @@ const (
 	// ReviewTime time to check the status of the operations
 	ReviewTime = 2 * time.Minute
 	// AliveTime time the operation is stored
-	AliveTime =  ExpirationTime +  2 * time.Minute
+	AliveTime = ExpirationTime + 2*time.Minute
 )
 
 const (
@@ -98,6 +98,7 @@ type DownloadOperation struct {
 	Info           string
 	Url            string
 	Directory      string
+	UserId         string
 }
 
 func (d *DownloadOperation) ToGRPC() *grpc_log_download_manager_go.DownloadLogResponse {
@@ -138,7 +139,7 @@ func (d *DownloadCache) CheckOperations() {
 		switch ope.State {
 		// case Queue, Generating: nothing to do
 		case Ready:
-			if ope.Expiration  < time.Now().UnixNano(){
+			if ope.Expiration < time.Now().UnixNano() {
 				err := RemoveFile(GetZipFilePath(ope.Directory, ope.RequestId))
 				if err != nil {
 					log.Warn().Str("requestId", ope.RequestId).Msg("error deleting zip file")
@@ -170,7 +171,7 @@ func (d *DownloadCache) ReviewOperations() {
 	}
 }
 
-func (d *DownloadCache) Add(organizationId string, requestId string, from int64, to int64, directory string) (*DownloadOperation, derrors.Error) {
+func (d *DownloadCache) Add(organizationId string, requestId string, from int64, to int64, directory string, userID string) (*DownloadOperation, derrors.Error) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -187,6 +188,7 @@ func (d *DownloadCache) Add(organizationId string, requestId string, from int64,
 		From:           from,
 		To:             to,
 		Directory:      directory,
+		UserId:         userID,
 	}
 	d.cache[requestId] = op
 

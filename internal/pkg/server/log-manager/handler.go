@@ -22,6 +22,7 @@ import (
 	"github.com/nalej/grpc-organization-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/nalej/log-download-manager/internal/pkg/entities"
+	"github.com/nalej/log-download-manager/internal/pkg/utils"
 )
 
 // Handler structure for the user requests.
@@ -35,14 +36,14 @@ func NewHandler(manager Manager) *Handler {
 }
 
 // DownloadLog asks for a logs download operation. These logs are going to be stored in a zip file
-func (h *Handler) DownloadLog(_ context.Context, request *grpc_log_download_manager_go.DownloadLogRequest) (*grpc_log_download_manager_go.DownloadLogResponse, error) {
+func (h *Handler) DownloadLog(ctx context.Context, request *grpc_log_download_manager_go.DownloadLogRequest) (*grpc_log_download_manager_go.DownloadLogResponse, error) {
 
 	vErr := entities.ValidDownloadLogRequest(request)
 	if vErr != nil {
 		return nil, conversions.ToDerror(vErr)
 	}
 
-	response, err := h.Manager.DownloadLog(request)
+	response, err := h.Manager.DownloadLog(request, utils.GetUserFromContext(ctx))
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}
@@ -50,13 +51,13 @@ func (h *Handler) DownloadLog(_ context.Context, request *grpc_log_download_mana
 }
 
 // Check asks for a download operation state
-func (h *Handler) Check(_ context.Context, request *grpc_log_download_manager_go.DownloadRequestId) (*grpc_log_download_manager_go.DownloadLogResponse, error) {
+func (h *Handler) Check(ctx context.Context, request *grpc_log_download_manager_go.DownloadRequestId) (*grpc_log_download_manager_go.DownloadLogResponse, error) {
 
 	vErr := entities.ValidDownloadRequestId(request)
 	if vErr != nil {
 		return nil, conversions.ToGRPCError(vErr)
 	}
-	response, err := h.Manager.Check(request)
+	response, err := h.Manager.Check(request, utils.GetUserFromContext(ctx))
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}
@@ -64,13 +65,13 @@ func (h *Handler) Check(_ context.Context, request *grpc_log_download_manager_go
 }
 
 
-func (h *Handler) List(_ context.Context, organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponseList, error) {
+func (h *Handler) List(ctx context.Context, organizationID *grpc_organization_go.OrganizationId) (*grpc_log_download_manager_go.DownloadLogResponseList, error) {
 
 	vErr := entities.ValidOrganizationId(organizationID)
 	if vErr != nil {
 		return nil, conversions.ToGRPCError(vErr)
 	}
-	response, err := h.Manager.List(organizationID)
+	response, err := h.Manager.List(organizationID, utils.GetUserFromContext(ctx))
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}

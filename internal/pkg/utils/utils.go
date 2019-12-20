@@ -18,11 +18,30 @@ package utils
 
 import (
 	"context"
+	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc/metadata"
 	"time"
 )
 
-const DefaultTimeout  = time.Minute
+const (
+	DefaultTimeout  = time.Minute
+	UserID = "user-id"
+)
 
 func GetContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), DefaultTimeout)
+}
+
+func GetUserFromContext(ctx context.Context) string {
+	userID := ""
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		user, found := md[UserID]
+		if found {
+			userID = user[0]
+		}
+	}
+	log.Debug().Str("userID", userID).Msg("user identifier")
+
+	return userID
 }
