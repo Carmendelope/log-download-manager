@@ -139,11 +139,11 @@ func (m *Manager) Check(request *grpc_log_download_manager_go.DownloadRequestId,
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}
-
-	if operation.UserId != userID {
-		return nil, derrors.NewPermissionDeniedError("operation not allowed for the user").WithParams(userID)
+	if operation.UserId != "" && userID != "" {
+		if operation.UserId != userID {
+			return nil, derrors.NewPermissionDeniedError("operation not allowed for the user").WithParams(userID)
+		}
 	}
-
 	return entities.NewDownloadLogResponse(request, operation), nil
 }
 
@@ -155,8 +155,10 @@ func (m *Manager) List(organizationID *grpc_organization_go.OrganizationId, user
 	}
 	logResponseList := make([]*grpc_log_download_manager_go.DownloadLogResponse, 0)
 	for _, ope := range list {
-		if ope.UserId == userID{
-			logResponseList = append(logResponseList, ope.ToGRPC())
+		if ope.UserId != "" && userID != "" {
+			if ope.UserId == userID {
+				logResponseList = append(logResponseList, ope.ToGRPC())
+			}
 		}
 
 	}
