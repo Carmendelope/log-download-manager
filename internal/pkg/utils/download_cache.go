@@ -28,8 +28,13 @@ import (
 type DownloadLogState int
 
 const (
+	// ExpirationTime time the file is ready to download
 	ExpirationTime = 10 * time.Minute
-	ExpiredMsg = "Expired"
+	ExpiredMsg     = "Expired"
+	// ReviewTime time to check the status of the operations
+	ReviewTime = 2 * time.Minute
+	// AliveTime time the operation is stored
+	AliveTime =  ExpirationTime +  2 * time.Minute
 )
 
 const (
@@ -92,6 +97,7 @@ type DownloadOperation struct {
 	Expiration     int64
 	Info           string
 	Url            string
+	Directory      string
 }
 
 func (d *DownloadOperation) ToGRPC() *grpc_log_download_manager_go.DownloadLogResponse {
@@ -114,13 +120,57 @@ type DownloadCache struct {
 }
 
 func NewDownloadCache(url string, publicHost string) *DownloadCache {
-	return &DownloadCache{
+	res := &DownloadCache{
 		cache: make(map[string]*DownloadOperation, 0),
 		url:   fmt.Sprintf("https://web.%s%s", publicHost, url),
 	}
+	go res.ReviewOperations()
+	return res
 }
 
-func (d *DownloadCache) Add(organizationId string, requestId string, from int64, to int64) (*DownloadOperation, derrors.Error) {
+func (d *DownloadCache) CheckOperations() {
+
+	d.Lock()
+	defer d.Unlock()
+
+	for i, ope := range d.cache {
+		log.Debug().Str("index", i).Interface("operation", ope).Msg("operation")
+		switch ope.State {
+		// case Queue, Generating: nothing to do
+		case Ready:
+			if ope.Expiration  < time.Now().UnixNano(){
+				err := RemoveFile(GetZipFilePath(ope.Directory, ope.RequestId))
+				if err != nil {
+					log.Warn().Str("requestId", ope.RequestId).Msg("error deleting zip file")
+				}
+				delete(d.cache, i)
+				log.Debug().Msg("deleted")
+			}
+		case Error, Downloaded:
+			if time.Unix(0, ope.Started).Add(AliveTime).After(time.Now()) {
+				err := RemoveFile(GetZipFilePath(ope.Directory, ope.RequestId))
+				if err != nil {
+					log.Warn().Str("requestId", ope.RequestId).Msg("error deleting zip file")
+				}
+				delete(d.cache, i)
+				log.Debug().Msg("deleted")
+			}
+		}
+	}
+}
+
+func (d *DownloadCache) ReviewOperations() {
+	log.Debug().Msg("ReviewOperations")
+	ticker := time.NewTicker(ReviewTime)
+	for {
+		select {
+		case <-ticker.C:
+			d.CheckOperations()
+		}
+	}
+}
+
+func (d *DownloadCache) Add(organizationId string, requestId string, from int64, to int64, directory string) (*DownloadOperation, derrors.Error) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -136,6 +186,7 @@ func (d *DownloadCache) Add(organizationId string, requestId string, from int64,
 		State:          Queue,
 		From:           from,
 		To:             to,
+		Directory:      directory,
 	}
 	d.cache[requestId] = op
 
@@ -153,8 +204,7 @@ func (d *DownloadCache) Get(requestId string) (*DownloadOperation, derrors.Error
 		return nil, derrors.NewNotFoundError("download operation").WithParams(requestId)
 	}
 
-	if operation.State == Ready && operation.Expiration < time.Now().UnixNano(){
-		operation.State = Error
+	if operation.State == Ready && operation.Expiration < time.Now().UnixNano() {
 		operation.Info = ExpiredMsg
 	}
 
@@ -205,8 +255,7 @@ func (d *DownloadCache) List(organizationID string) ([]*DownloadOperation, derro
 
 	for _, ope := range d.cache {
 		if ope.OrganizationId == organizationID {
-			if ope.State == Ready && ope.Expiration < time.Now().UnixNano(){
-				ope.State = Error
+			if ope.State == Ready && ope.Expiration < time.Now().UnixNano() {
 				ope.Info = ExpiredMsg
 			}
 			list = append(list, ope)

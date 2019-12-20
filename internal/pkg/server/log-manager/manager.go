@@ -121,7 +121,7 @@ func (m *Manager) DownloadLog(request *grpc_log_download_manager_go.DownloadLogR
 
 	log.Debug().Interface("request", request).Msg("DownloadLog request")
 	requestId := uuid.New().String()
-	op, err := m.opeCache.Add(request.OrganizationId, requestId, request.From, request.To)
+	op, err := m.opeCache.Add(request.OrganizationId, requestId, request.From, request.To, m.DownloadDirectory)
 	if err != nil {
 		return nil, err
 	}
