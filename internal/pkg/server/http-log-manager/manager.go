@@ -21,6 +21,7 @@ import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/log-download-manager/internal/pkg/server/interceptor"
 	"github.com/nalej/log-download-manager/internal/pkg/utils"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -98,6 +99,19 @@ func (m *Manager) DownloadFile() http.Handler {
 			http.Error(w, getErr.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		// check th user
+		if ope.UserId != "" {
+			userID := r.Header.Get(interceptor.UserID)
+			if userID != userID{
+				log.Debug().Msg("not allowed for the user")
+				http.Error(w, "download not allowed for the user", http.StatusUnauthorized)
+				return
+			}
+		}
+
+
+
 		vOpeErr := m.ValidToDownload(ope)
 		if vOpeErr != nil {
 			http.Error(w, vOpeErr.Error(), http.StatusUnauthorized)
