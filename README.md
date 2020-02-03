@@ -1,15 +1,14 @@
 # Log-Download Manager
 ​
-The Log-Download manager is the component responsible for operations related to downloading the log entries  
+The Log-Download manager is responsible for operations related to downloading the log entries.
 
 ## Getting Started
 
-​
 ### Prerequisites
 ​
 Before installing this component, we need to have the following deployed:​
 
-* application-manager: Log-Download manager access application-manager to send operations until unified-logging
+* [`application-manager`](https://github.com/nalej/application-manager): Log-Download manager accesses `application-manager` to send and receive operations and data from the Unified Logging component.
 ​
 ### Build and compile
 ​
@@ -19,8 +18,7 @@ In order to build and compile this repository use the provided Makefile:
 make all
 ```
 ​
-This operation generates the binaries for this repo, download dependencies,
-run existing tests and generate ready-to-deploy Kubernetes files.
+This operation generates the binaries for this repo, downloads the required dependencies, runs existing tests and generates ready-to-deploy Kubernetes files.
 ​
 ### Run tests
 ​
@@ -52,7 +50,7 @@ Please read [contributing.md](contributing.md) for details on our code of conduc
 ​
 ## Versioning
 ​
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/nalej/log-download-manager/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the available versions, see the [tags on this repository](https://github.com/nalej/log-download-manager/tags). 
 ​
 ## Authors
 ​
